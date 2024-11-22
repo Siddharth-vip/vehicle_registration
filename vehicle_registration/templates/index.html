@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Registration System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        h1 { text-align: center; }
+        form { margin-bottom: 20px; }
+        input, button { padding: 10px; margin-top: 10px; width: 100%; }
+        .results { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vehicle Registration System</h1>
+
+        <!-- Register Vehicle Form -->
+        <form id="registerForm">
+            <h2>Register Vehicle</h2>
+            <input type="text" id="vin" placeholder="Enter VIN" required>
+            <input type="text" id="owner_name" placeholder="Enter Owner Name" required>
+            <input type="text" id="vehicle_model" placeholder="Enter Vehicle Model" required>
+            <input type="number" id="year" placeholder="Enter Year" required>
+            <button type="submit">Register Vehicle</button>
+        </form>
+
+        <!-- Retrieve Vehicle Form -->
+        <form id="retrieveForm">
+            <h2>Retrieve Vehicle</h2>
+            <input type="text" id="retrieveVin" placeholder="Enter VIN to retrieve" required>
+            <button type="submit">Get Vehicle</button>
+        </form>
+
+        <!-- List Vehicles Button -->
+        <button id="listVehicles">List All Vehicles</button>
+
+        <!-- Results Display -->
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        // Register Vehicle
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const vin = document.getElementById('vin').value;
+            const owner_name = document.getElementById('owner_name').value;
+            const vehicle_model = document.getElementById('vehicle_model').value;
+            const year = document.getElementById('year').value;
+
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ vin, owner_name, vehicle_model, year })
+                });
+                
+                const result = await response.json();
+                document.getElementById('results').innerText = result.message || result.error;
+
+                // Clear input fields after submission
+                document.getElementById('vin').value = '';
+                document.getElementById('owner_name').value = '';
+                document.getElementById('vehicle_model').value = '';
+                document.getElementById('year').value = '';
+            } catch (error) {
+                console.error("Error registering vehicle:", error);
+            }
+        });
+
+        // Retrieve Vehicle
+        document.getElementById('retrieveForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const vin = document.getElementById('retrieveVin').value;
+
+            try {
+                const response = await fetch(`/vehicle/${vin}`);
+                const result = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('results').innerHTML = `
+                        <h2>Vehicle Details</h2>
+                        <p>VIN: ${result.vin}</p>
+                        <p>Owner: ${result.owner_name}</p>
+                        <p>Model: ${result.vehicle_model}</p>
+                        <p>Year: ${result.year}</p>
+                    `;
+                } else {
+                    document.getElementById('results').innerText = result.error;
+                }
+
+                // Clear input field after retrieval
+                document.getElementById('retrieveVin').value = '';
+            } catch (error) {
+                console.error("Error retrieving vehicle:", error);
+            }
+        });
+
+        // List All Vehicles
+        document.getElementById('listVehicles').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/vehicles');
+                const vehicles = await response.json();
+
+                if (response.ok) {
+                    const resultsDiv = document.getElementById('results');
+                    resultsDiv.innerHTML = '<h2>All Vehicles</h2>';
+                    vehicles.forEach(vehicle => {
+                        resultsDiv.innerHTML += `
+                            <p>VIN: ${vehicle.vin}, Owner: ${vehicle.owner_name}, Model: ${vehicle.vehicle_model}, Year: ${vehicle.year}</p>
+                        `;
+                    });
+                } else {
+                    document.getElementById('results').innerText = 'Error fetching vehicles.';
+                }
+            } catch (error) {
+                console.error("Error listing vehicles:", error);
+            }
+        });
+    </script>
+</body>
+</html>
